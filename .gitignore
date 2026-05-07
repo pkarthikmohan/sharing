@@ -1,0 +1,32 @@
+.DS_Store
+Thumbs.db
+
+# Heap dumps / profiling output (never commit)
+*.hprof
+**/java_pid*.hprof
+
+# Node / workspace
+node_modules/
+.pnpm-store/
+dist/
+tmp/
+.cache/
+
+# Android / Gradle generated
+**/.gradle/
+**/build/
+**/*.apk
+**/*.aab
+
+# Android Studio / IntelliJ
+**/.idea/
+*.iml
+
+# Android local machine config / secrets
+**/local.properties
+**/google-services.json
+
+# Local scratch assets
+attached_assets/
+
+
