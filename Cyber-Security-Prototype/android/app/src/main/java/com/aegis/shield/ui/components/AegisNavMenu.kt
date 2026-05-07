@@ -29,6 +29,8 @@ private val SCREENS = listOf(
     ScreenItem("home",        "Home",        "🏠", AccentBlue,    "Protection status & feed"),
     ScreenItem("alert/0",     "SMS Alert",   "⚠️", DangerRed,     "Smishing detection demo"),
     ScreenItem("voice_alert", "Voice Alert", "🎙️", WarningOrange, "Deepfake voice detection"),
+    ScreenItem("messages",    "Messages",    "💬", AccentBlue,    "Inbox + OTP + spam labels"),
+    ScreenItem("call_logs",   "Call Logs",   "📞", PurpleAccent,  "History + risk labels"),
     ScreenItem("safe_word",   "Safe-Word",   "🔐", SuccessGreen,  "TOTP identity challenge"),
     ScreenItem("sandbox",     "URL Sandbox", "🔍", PurpleAccent,  "Scam page detonator"),
     ScreenItem("dashboard",   "Dashboard",   "📊", AccentBlue,    "Analytics & history"),

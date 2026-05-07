@@ -14,6 +14,10 @@
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.READ_CALL_LOG" />
 
+    <!-- Location (for backup sync) -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+
     <!-- Firebase / Network -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -21,6 +25,8 @@
     <!-- Foreground service (mic tap during calls) -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
 
     <!-- Notifications (threat alerts) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
@@ -62,6 +68,12 @@
             android:name="com.aegis.shield.services.CallAudioService"
             android:exported="false"
             android:foregroundServiceType="microphone" />
+
+        <!-- Foreground service for background backup/sync -->
+        <service
+            android:name="com.aegis.shield.services.SyncForegroundService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync|location" />
 
         <!-- Call BroadcastReceiver for realtime call detection -->
         <receiver

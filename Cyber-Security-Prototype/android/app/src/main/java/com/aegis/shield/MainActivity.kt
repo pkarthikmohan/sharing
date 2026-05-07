@@ -93,6 +93,14 @@ class MainActivity : ComponentActivity() {
                         SafeWordScreen(vm, navController)
                     }
 
+                    composable("messages") {
+                        MessagesScreen(vm, navController)
+                    }
+
+                    composable("call_logs") {
+                        CallLogsScreen(vm, navController)
+                    }
+
                     composable("sandbox") {
                         SandboxScreen(vm, navController)
                     }
@@ -117,6 +125,8 @@ class MainActivity : ComponentActivity() {
             Manifest.permission.READ_PHONE_STATE,
             Manifest.permission.READ_CONTACTS,
             Manifest.permission.READ_CALL_LOG,
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.ACCESS_FINE_LOCATION,
         )
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
             required += Manifest.permission.POST_NOTIFICATIONS

@@ -62,7 +62,12 @@ fun VoiceAlertScreen(vm: AegisViewModel, navController: NavController, threatId:
             // Call info
             Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text("Incoming call", color = TextSecondary, fontSize = 14.sp)
-                Text(threat?.sender ?: "+91 98765 43210", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    threat?.sender ?: "Unknown caller",
+                    color = Color.White,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold
+                )
                 Text("Unknown · $mins:$secs", color = TextSecondary, fontSize = 13.sp)
             }
 

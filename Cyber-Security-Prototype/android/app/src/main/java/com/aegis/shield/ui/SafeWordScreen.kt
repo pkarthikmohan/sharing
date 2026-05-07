@@ -23,14 +23,7 @@ import com.aegis.shield.ui.components.AegisNavMenu
 import com.aegis.shield.ui.theme.*
 import kotlinx.coroutines.delay
 
-// ── Data ──────────────────────────────────────────────────────
-private data class TrustedContact(val name: String, val relation: String, val number: String)
-
-private val CONTACTS = listOf(
-    TrustedContact("Priya Sharma", "Wife",   "+91 98765 00001"),
-    TrustedContact("Ravi Kumar",   "Father", "+91 98765 00002"),
-    TrustedContact("Neha Singh",   "Sister", "+91 98765 00003"),
-)
+// Trusted contacts come from AegisViewModel (user-managed)
 
 private enum class ChallengeState { IDLE, SENDING, WAITING, VERIFIED, FAILED }
 
@@ -39,11 +32,17 @@ private const val DEMO_PIN = "482917"
 // ── Screen ────────────────────────────────────────────────────
 @Composable
 fun SafeWordScreen(vm: AegisViewModel, navController: NavController) {
+    val contacts by vm.trustedContacts.collectAsState()
     var selectedIndex by remember { mutableStateOf<Int?>(null) }
     var state        by remember { mutableStateOf(ChallengeState.IDLE) }
     var countdown    by remember { mutableStateOf(30) }
     var pin          by remember { mutableStateOf("") }
     var showPin      by remember { mutableStateOf(false) }
+
+    var adding by remember { mutableStateOf(false) }
+    var newName by remember { mutableStateOf("") }
+    var newRelation by remember { mutableStateOf("") }
+    var newNumber by remember { mutableStateOf("") }
 
     // Auto-advance SENDING → WAITING after 1.5 s
     LaunchedEffect(state) {
@@ -116,7 +115,13 @@ fun SafeWordScreen(vm: AegisViewModel, navController: NavController) {
         )
         Spacer(Modifier.height(10.dp))
 
-        CONTACTS.forEachIndexed { i, contact ->
+        if (contacts.isEmpty()) {
+            Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                Text("No trusted contacts yet. Add one below.", color = TextMuted, fontSize = 13.sp)
+            }
+        }
+
+        contacts.forEachIndexed { i, contact ->
             val isSelected = selectedIndex == i
             Row(
                 Modifier
@@ -156,11 +161,99 @@ fun SafeWordScreen(vm: AegisViewModel, navController: NavController) {
                     Text(contact.name, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                     Text("${contact.relation} · ${contact.number}", color = TextSecondary, fontSize = 12.sp)
                 }
-                if (isSelected) Text("✓", color = AccentBlue, fontSize = 18.sp)
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "Remove",
+                        color = DangerRed,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(DangerRed.copy(alpha = 0.13f))
+                            .border(1.dp, DangerRed.copy(alpha = 0.27f), RoundedCornerShape(10.dp))
+                            .clickable {
+                                vm.removeTrustedContact(contact.number)
+                                if (selectedIndex == i) selectedIndex = null
+                            }
+                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                    )
+                    if (isSelected) Text("✓", color = AccentBlue, fontSize = 18.sp)
+                }
             }
         }
 
         Spacer(Modifier.height(20.dp))
+
+        // ── Add contact ────────────────────────────────────────
+        Text(
+            "ADD TRUSTED CONTACT",
+            color = TextSecondary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
+            letterSpacing = 0.5.sp,
+            modifier = Modifier.padding(horizontal = 16.dp)
+        )
+        Spacer(Modifier.height(10.dp))
+
+        Column(
+            Modifier.padding(horizontal = 16.dp).fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp)).background(BackgroundDark)
+                .border(1.dp, BorderBlue.copy(alpha = 0.33f), RoundedCornerShape(16.dp))
+                .padding(14.dp)
+        ) {
+            if (!adding) {
+                Box(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
+                        .background(BorderBlue).border(1.dp, BorderBlueMid, RoundedCornerShape(12.dp))
+                        .clickable { adding = true }
+                        .padding(vertical = 12.dp),
+                    contentAlignment = Alignment.Center
+                ) { Text("+ Add Contact", color = AccentBlue, fontSize = 13.sp, fontWeight = FontWeight.Bold) }
+            } else {
+                OutlinedTextField(
+                    value = newName,
+                    onValueChange = { newName = it },
+                    label = { Text("Name") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                Spacer(Modifier.height(10.dp))
+                OutlinedTextField(
+                    value = newRelation,
+                    onValueChange = { newRelation = it },
+                    label = { Text("Relation (optional)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                Spacer(Modifier.height(10.dp))
+                OutlinedTextField(
+                    value = newNumber,
+                    onValueChange = { newNumber = it },
+                    label = { Text("Phone number") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
+                )
+                Spacer(Modifier.height(12.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                    Button(
+                        onClick = {
+                            vm.addTrustedContact(newName, newRelation, newNumber)
+                            newName = ""; newRelation = ""; newNumber = ""
+                            adding = false
+                        },
+                        modifier = Modifier.weight(1f),
+                        enabled = newName.isNotBlank() && newNumber.isNotBlank(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = BorderBlue)
+                    ) { Text("Save", fontWeight = FontWeight.Bold) }
+
+                    OutlinedButton(
+                        onClick = { adding = false; newName = ""; newRelation = ""; newNumber = "" },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp),
+                    ) { Text("Cancel") }
+                }
+            }
+        }
 
         // ── Challenge card ────────────────────────────────────
         val cardBg = when (state) {
@@ -218,7 +311,7 @@ fun SafeWordScreen(vm: AegisViewModel, navController: NavController) {
                     Text("📡", fontSize = 24.sp)
                     Spacer(Modifier.height(10.dp))
                     Text(
-                        "Sending secure challenge to ${selectedIndex?.let { CONTACTS[it].name }}…",
+                        "Sending secure challenge to ${selectedIndex?.let { contacts.getOrNull(it)?.name }}…",
                         color = AccentBlue, fontSize = 14.sp, textAlign = TextAlign.Center
                     )
                     Spacer(Modifier.height(12.dp))
@@ -330,7 +423,7 @@ fun SafeWordScreen(vm: AegisViewModel, navController: NavController) {
                     Text("Identity Verified", color = SuccessGreen, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "This is a real call from ${selectedIndex?.let { CONTACTS[it].name }}. TOTP matched.",
+                        "This is a real call from ${selectedIndex?.let { contacts.getOrNull(it)?.name }}. TOTP matched.",
                         color = Color(0xFF88CCAA), fontSize = 13.sp, lineHeight = 18.sp,
                         textAlign = TextAlign.Center
                     )
@@ -349,7 +442,7 @@ fun SafeWordScreen(vm: AegisViewModel, navController: NavController) {
                     Text("Verification Failed", color = DangerRed, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "This is NOT ${selectedIndex?.let { CONTACTS[it].name }}. End this call immediately.",
+                        "This is NOT ${selectedIndex?.let { contacts.getOrNull(it)?.name }}. End this call immediately.",
                         color = Color(0xFFFFAAAA), fontSize = 13.sp, lineHeight = 18.sp,
                         textAlign = TextAlign.Center
                     )
