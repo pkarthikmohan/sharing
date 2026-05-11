@@ -1,11 +1,16 @@
 package com.aegis.shield.ui
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -14,6 +19,7 @@ import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.aegis.shield.AegisViewModel
 import com.aegis.shield.data.ThreatBand
@@ -24,7 +30,20 @@ import kotlin.math.*
 
 @Composable
 fun DashboardScreen(vm: AegisViewModel, navController: NavController) {
-    val allThreats by vm.allThreats.collectAsState()
+    val dashboardViewModel: DashboardViewModel = hiltViewModel()
+    val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+    val createPdfLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/pdf"),
+    ) { uri ->
+        uri?.let { dashboardViewModel.exportReportToPdf(context, it) }
+    }
+    LaunchedEffect(Unit) {
+        dashboardViewModel.events.collect { message ->
+            snackbarHostState.showSnackbar(message)
+        }
+    }
+    val allThreats by dashboardViewModel.allThreats.collectAsState()
     var period by remember { mutableStateOf("7d") }
 
     val msFilter = when (period) {
@@ -39,7 +58,12 @@ fun DashboardScreen(vm: AegisViewModel, navController: NavController) {
     val urlCount      = filtered.count { it.type == ThreatType.URL_SCAM.name }
     val total         = filtered.size
 
-    Column(Modifier.fillMaxSize().background(BackgroundDeepNavy)) {
+    Box(Modifier.fillMaxSize().background(BackgroundDeepNavy)) {
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter).padding(12.dp),
+        )
+        Column(Modifier.fillMaxSize().background(BackgroundDeepNavy)) {
         // Header
         Row(
             Modifier.fillMaxWidth().background(BackgroundHeader)
@@ -87,9 +111,8 @@ fun DashboardScreen(vm: AegisViewModel, navController: NavController) {
 
             Spacer(Modifier.height(16.dp))
 
-            // Top senders
-            val topSenders = filtered.groupBy { it.sender }.entries
-                .sortedByDescending { it.value.size }.take(4)
+            // Top senders (live from Room)
+            val topSenders by dashboardViewModel.topBlockedSenders.collectAsState()
 
             Text("Top Blocked Senders", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(horizontal = 16.dp))
@@ -100,7 +123,7 @@ fun DashboardScreen(vm: AegisViewModel, navController: NavController) {
                     Text("No data for this period", color = TextMuted, fontSize = 13.sp)
                 }
             } else {
-                topSenders.forEachIndexed { i, (sender, threats) ->
+                topSenders.forEachIndexed { i, (sender, count) ->
                     Row(
                         Modifier.padding(horizontal = 16.dp, vertical = 4.dp).fillMaxWidth()
                             .clip(RoundedCornerShape(12.dp)).background(BackgroundDark).padding(12.dp),
@@ -112,12 +135,12 @@ fun DashboardScreen(vm: AegisViewModel, navController: NavController) {
                         Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(1f)) {
                             Text(sender, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                            Text(threats.first().type, color = TextSecondary, fontSize = 11.sp)
+                            Text("Blocked threats", color = TextSecondary, fontSize = 11.sp)
                         }
                         Box(Modifier.clip(RoundedCornerShape(20.dp)).background(DangerRed.copy(0.13f))
                             .border(1.dp, DangerRed.copy(0.27f), RoundedCornerShape(20.dp))
                             .padding(horizontal = 10.dp, vertical = 4.dp)) {
-                            Text("${threats.size}x", color = DangerRed, fontSize = 12.sp)
+                            Text("${count}x", color = DangerRed, fontSize = 12.sp)
                         }
                     }
                 }
@@ -153,10 +176,15 @@ fun DashboardScreen(vm: AegisViewModel, navController: NavController) {
             Box(
                 Modifier.padding(horizontal = 16.dp).fillMaxWidth()
                     .clip(RoundedCornerShape(14.dp)).background(BackgroundDark)
-                    .border(1.dp, BorderBlueMid, RoundedCornerShape(14.dp)).padding(vertical = 14.dp),
+                    .border(1.dp, BorderBlueMid, RoundedCornerShape(14.dp))
+                    .clickable {
+                        createPdfLauncher.launch("Aegis_Threat_Report_${System.currentTimeMillis()}.pdf")
+                    }
+                    .padding(vertical = 14.dp),
                 contentAlignment = Alignment.Center
             ) { Text("📄 Export Threat Report (PDF)", color = AccentBlue, fontSize = 14.sp, fontWeight = FontWeight.SemiBold) }
         }
+    }
     }
 }
 
@@ -191,7 +219,6 @@ private fun DonutChart(smishing: Int, vishing: Int, url: Int, total: Int) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
         Canvas(Modifier.size(140.dp)) {
             val r = size.minDimension / 2 * 0.85f
-            val c = center
             if (total == 0) {
                 drawCircle(BorderBlue, r, style = Stroke(20.dp.toPx()))
                 return@Canvas

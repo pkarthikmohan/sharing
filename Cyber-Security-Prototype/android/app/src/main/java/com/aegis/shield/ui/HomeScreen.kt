@@ -1,5 +1,6 @@
 package com.aegis.shield.ui
 
+import android.net.Uri
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -18,6 +19,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import com.aegis.shield.AegisViewModel
 import com.aegis.shield.data.ThreatBand
 import com.aegis.shield.data.ThreatEntity
@@ -26,10 +30,9 @@ import com.aegis.shield.ui.theme.*
 
 @Composable
 fun HomeScreen(vm: AegisViewModel, navController: NavController) {
-    val recent       by vm.recentThreats.collectAsState()
-    val smsCount     by vm.smsScanned.collectAsState()
-    val callCount    by vm.callsMonitored.collectAsState()
-    val blockedCount by vm.threatsBlocked.collectAsState()
+    val homeViewModel: HomeViewModel = hiltViewModel()
+    val recent by homeViewModel.recentThreats.collectAsState()
+    val stats by homeViewModel.threatStats.collectAsState()
 
     val pulse = rememberInfiniteTransition(label = "pulse")
     val pulseScale by pulse.animateFloat(
@@ -48,18 +51,9 @@ fun HomeScreen(vm: AegisViewModel, navController: NavController) {
             .verticalScroll(rememberScrollState())
             .padding(bottom = 24.dp)
     ) {
-        // Status bar mock
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text("9:41", color = TextSecondary, fontSize = 12.sp)
-            Text("▶▶ 📶 🔋", color = TextSecondary, fontSize = 12.sp)
-        }
-
         // Header
         Row(
-            Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp),
+            Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Shield + pulse
@@ -120,9 +114,9 @@ fun HomeScreen(vm: AegisViewModel, navController: NavController) {
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             listOf(
-                Triple("SMS Scanned",     smsCount,     AccentBlue),
-                Triple("Calls Monitored", callCount,    PurpleAccent),
-                Triple("Threats Blocked", blockedCount, DangerRed),
+                Triple("SMS Scanned",     stats.smsScanned,     AccentBlue),
+                Triple("Calls Monitored", stats.callsMonitored, PurpleAccent),
+                Triple("Threats Blocked", stats.threatsBlocked, DangerRed),
             ).forEach { (label, value, color) ->
                 StatCard(Modifier.weight(1f), label, value, color)
             }
@@ -146,9 +140,20 @@ fun HomeScreen(vm: AegisViewModel, navController: NavController) {
                 Text("No threats detected yet", color = TextMuted, fontSize = 13.sp)
             }
         } else {
-            recent.forEach { threat ->
-                ThreatRow(threat) { navController.navigate("alert/${threat.id}") }
-                Spacer(Modifier.height(8.dp))
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 420.dp)
+                    .padding(bottom = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                items(items = recent, key = { it.id }) { threat ->
+                    ThreatRow(threat) {
+                        val url =
+                            "alert?sender=${Uri.encode(threat.sender)}&body=${Uri.encode(threat.body.orEmpty())}"
+                        navController.navigate(url)
+                    }
+                }
             }
         }
     }

@@ -23,13 +23,8 @@ fun SettingsScreen(vm: AegisViewModel, navController: NavController) {
     val settings by vm.settings.collectAsState()
 
     Column(Modifier.fillMaxSize().background(BackgroundDeepNavy)) {
-        // Status bar
-        Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("9:41", color = TextSecondary, fontSize = 12.sp)
-            Text("▶▶ 📶 🔋", color = TextSecondary, fontSize = 12.sp)
-        }
         // Header
-        Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 16.dp, bottom = 16.dp)
+        Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 16.dp, top = 16.dp, bottom = 16.dp)
             .border(BorderStroke(1.dp, BorderBlue), RoundedCornerShape(0.dp)),
             verticalAlignment = Alignment.CenterVertically) {
             Text("⚙️", fontSize = 22.sp)

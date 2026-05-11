@@ -27,7 +27,7 @@ private data class ScreenItem(
 
 private val SCREENS = listOf(
     ScreenItem("home",        "Home",        "🏠", AccentBlue,    "Protection status & feed"),
-    ScreenItem("alert/0",     "SMS Alert",   "⚠️", DangerRed,     "Smishing detection demo"),
+    ScreenItem("alert?sender=&body=", "SMS Alert",   "⚠️", DangerRed,     "Smishing detection demo"),
     ScreenItem("voice_alert", "Voice Alert", "🎙️", WarningOrange, "Deepfake voice detection"),
     ScreenItem("messages",    "Messages",    "💬", AccentBlue,    "Inbox + OTP + spam labels"),
     ScreenItem("call_logs",   "Call Logs",   "📞", PurpleAccent,  "History + risk labels"),
@@ -104,7 +104,9 @@ fun AegisNavMenu(currentRoute: String, navController: NavController) {
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         row.forEach { screen ->
-                            val isCurrent = currentRoute.startsWith(screen.route.substringBefore("/"))
+                            val routeRoot = screen.route.substringBefore("?").substringBefore("/")
+                            val isCurrent =
+                                currentRoute == routeRoot || currentRoute.startsWith("$routeRoot/")
                             Box(
                                 modifier = Modifier
                                     .weight(1f)

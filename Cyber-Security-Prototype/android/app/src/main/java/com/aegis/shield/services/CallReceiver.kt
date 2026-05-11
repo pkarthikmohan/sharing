@@ -11,6 +11,7 @@ import android.util.Log
 
 class CallReceiver : BroadcastReceiver() {
 
+    @Suppress("DEPRECATION")
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != TelephonyManager.ACTION_PHONE_STATE_CHANGED) return
 
@@ -31,6 +32,7 @@ class CallReceiver : BroadcastReceiver() {
                 Log.d("CallReceiver", "Call active. Starting audio monitoring for $contactName.")
                 val serviceIntent = Intent(context, CallAudioService::class.java).apply {
                     putExtra("CALLER_NAME", contactName)
+                    putExtra("CALLER_NUMBER", incomingNumber ?: "Unknown")
                 }
                 
                 context.startForegroundService(serviceIntent)

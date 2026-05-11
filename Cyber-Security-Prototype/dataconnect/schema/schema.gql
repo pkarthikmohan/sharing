@@ -1,0 +1,48 @@
+type User @table {
+  displayName: String!
+  email: String!
+  createdAt: Timestamp!
+  photoUrl: String
+  role: String
+}
+
+type Project @table {
+  owner: User!
+  name: String!
+  description: String!
+  startDate: Date!
+  endDate: Date!
+  status: String!
+  budget: Float
+}
+
+type Task @table {
+  project: Project!
+  assignee: User
+  title: String!
+  description: String!
+  status: String!
+  priority: String!
+  createdAt: Timestamp!
+  dueDate: Date
+}
+
+type Vulnerability @table {
+  project: Project!
+  reporter: User!
+  name: String!
+  description: String!
+  severity: String!
+  status: String!
+  createdAt: Timestamp!
+  remediationSteps: String
+  cvssScore: Float
+}
+
+type Comment @table {
+  author: User!
+  task: Task
+  vulnerability: Vulnerability
+  content: String!
+  createdAt: Timestamp!
+}

@@ -58,15 +58,22 @@ class SmsReceiver : BroadcastReceiver() {
 
                 Log.d(TAG, "Smishing score=${rawResult.score} band=$band (sensitivity=$sensitivity)")
 
-                // Save every SMS that scores above SAFE
-                if (band != ThreatBand.SAFE) {
+                // Persist for live dashboards whenever score > 40 (hackathon-friendly threshold)
+                if (rawResult.score > 40) {
                     val dao     = ThreatDatabase.getInstance(context).threatDao()
+                    val persistBand = when {
+                        rawResult.score >= 85 -> ThreatBand.CONFIRMED
+                        rawResult.score >= 65 -> ThreatBand.LIKELY
+                        rawResult.score >= 40 -> ThreatBand.SUSPICIOUS
+                        else -> ThreatBand.SAFE
+                    }
                     val threat  = ThreatEntity(
                         type      = "SMISHING",
                         sender    = sender,
                         body      = body,
                         score     = rawResult.score,
-                        band      = band.name,
+                        band      = persistBand.name,
+                        blocked   = persistBand == ThreatBand.CONFIRMED || persistBand == ThreatBand.LIKELY,
                     )
                     val id = dao.insert(threat)
 
@@ -77,8 +84,10 @@ class SmsReceiver : BroadcastReceiver() {
                         firestoreRepo.reportThreat(threat)
                     }
 
-                    // Notify on SUSPICIOUS and above
-                    showNotification(context, sender, rawResult.score, band, id)
+                    // Notify based on user sensitivity thresholds
+                    if (band != ThreatBand.SAFE) {
+                        showNotification(context, sender, rawResult.score, band, id)
+                    }
                 }
             } catch (e: Exception) {
                 // Common cause: missing model assets (sms_model.tflite / vocab mismatch).

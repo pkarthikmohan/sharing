@@ -98,7 +98,7 @@ class SmishingClassifier(context: Context) {
         }
 
         val vectors = buildThreatVectors(smsText, score)
-        val explanation = buildExplanation(smsText, band)
+        val explanation = buildExplanation(band)
 
         return SmishingResult(score, band, vectors, explanation)
     }
@@ -118,7 +118,7 @@ class SmishingClassifier(context: Context) {
         )
     }
 
-    private fun buildExplanation(text: String, band: ThreatBand): String = when (band) {
+    private fun buildExplanation(band: ThreatBand): String = when (band) {
         ThreatBand.CONFIRMED  -> "This message has multiple hallmarks of a scam: urgent financial demand, authority impersonation, and suspicious link patterns. Do not click any links or pay."
         ThreatBand.LIKELY     -> "This message shows several suspicious signals. Treat with caution and do not share personal details."
         ThreatBand.SUSPICIOUS -> "This message has some unusual patterns. Verify the sender through official channels before acting."

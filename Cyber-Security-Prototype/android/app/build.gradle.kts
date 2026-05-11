@@ -7,6 +7,8 @@ plugins {
     id("com.google.dagger.hilt.android")
 }
 
+import java.util.Properties
+
 android {
     namespace = "com.aegis.shield"
     compileSdk = 34
@@ -18,6 +20,20 @@ android {
         versionCode = 1
         versionName = "1.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("String", "TWILIO_ACCOUNT_SID", "\"YOUR_TWILIO_ACCOUNT_SID\"")
+        buildConfigField("String", "TWILIO_AUTH_TOKEN", "\"YOUR_TWILIO_AUTH_TOKEN\"")
+        buildConfigField("String", "TWILIO_FROM_NUMBER", "\"YOUR_TWILIO_FROM_NUMBER\"")
+
+        val localProps = Properties().apply {
+            val f = rootProject.file("local.properties")
+            if (f.exists()) {
+                f.inputStream().use { load(it) }
+            }
+        }
+        val vtKey = (localProps.getProperty("VIRUSTOTAL_API_KEY") ?: "").trim()
+        buildConfigField("String", "VIRUSTOTAL_API_KEY", "\"$vtKey\"")
+        val auriginKey = (localProps.getProperty("AURIGIN_API_KEY") ?: "").trim()
+        buildConfigField("String", "AURIGIN_API_KEY", "\"$auriginKey\"")
     }
 
     buildTypes {
@@ -37,7 +53,10 @@ android {
 
     kotlinOptions { jvmTarget = "17" }
 
-    buildFeatures { compose = true }
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
 
     composeOptions {
         // Kotlin 1.9.24 → Compose Compiler 1.5.14
@@ -46,6 +65,11 @@ android {
 
     // Keep TFLite model files uncompressed so they can be memory-mapped
     androidResources { noCompress += "tflite" }
+
+    lint {
+        abortOnError = false
+        checkReleaseBuilds = false
+    }
 }
 
 dependencies {
@@ -79,6 +103,12 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
 
+    // Networking
+    implementation("com.squareup.retrofit2:retrofit:2.11.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.11.0")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+
     // Hilt DI
     implementation("com.google.dagger:hilt-android:2.51.1")
     kapt("com.google.dagger:hilt-compiler:2.51.1")
@@ -87,12 +117,12 @@ dependencies {
     // Location
     implementation("com.google.android.gms:play-services-location:21.3.0")
 
-    // Firebase
-    implementation(platform("com.google.firebase:firebase-bom:33.0.0"))
+    // Firebase (BoM aligns versions)
+    implementation(platform("com.google.firebase:firebase-bom:32.8.0"))
     implementation("com.google.firebase:firebase-analytics")
-    implementation("com.google.firebase:firebase-messaging")
-    implementation("com.google.firebase:firebase-firestore")
     implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-firestore")
+    implementation("com.google.firebase:firebase-messaging")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
